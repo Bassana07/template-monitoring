@@ -1,0 +1,54 @@
+# Route traces / métriques / logs OTLP vers Tempo, Prometheus (scrape) et Loki.
+# Pointez vos applications vers otel-collector:4317 (gRPC) ou :4318 (HTTP).
+
+receivers:
+  otlp:
+    protocols:
+      grpc:
+        endpoint: 0.0.0.0:4317
+      http:
+        endpoint: 0.0.0.0:4318
+
+processors:
+  batch:
+    timeout: 10s
+    send_batch_size: 1024
+
+exporters:
+  # Métriques OTLP → exposition au format Prometheus (scrapée par Prometheus :8889)
+  prometheus:
+    endpoint: 0.0.0.0:8889
+    namespace: otel
+
+  # Traces → Tempo (OTLP gRPC)
+  otlp:
+    endpoint: tempo:4317
+    tls:
+      insecure: true
+
+  # Logs OTLP → Loki
+  loki:
+    endpoint: http://loki:3100/loki/api/v1/push
+    default_labels_enabled:
+      exporter: true
+      job: true
+
+extensions:
+  health_check:
+    endpoint: 0.0.0.0:13133
+
+service:
+  extensions: [health_check]
+  pipelines:
+    traces:
+      receivers: [otlp]
+      processors: [batch]
+      exporters: [otlp]
+    metrics:
+      receivers: [otlp]
+      processors: [batch]
+      exporters: [prometheus]
+    logs:
+      receivers: [otlp]
+      processors: [batch]
+      exporters: [loki]

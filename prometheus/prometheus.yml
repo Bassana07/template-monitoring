@@ -1,0 +1,25 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+scrape_configs:
+  - job_name: prometheus
+    static_configs:
+      - targets: ["localhost:9090"]
+
+  # Métriques exposées par l'OTEL Collector (receiver prometheus → :8889)
+  - job_name: otel-collector
+    static_configs:
+      - targets: ["otel-collector:8889"]
+
+  # Métriques Tempo
+  - job_name: tempo
+    static_configs:
+      - targets: ["tempo:3200"]
+    metrics_path: /metrics
+
+  # Ajoutez vos services ici (ex. Spring Boot Actuator, /metrics, etc.)
+  # - job_name: mon-api
+  #   static_configs:
+  #     - targets: ["host.docker.internal:8080"]
+  #   metrics_path: /actuator/prometheus
